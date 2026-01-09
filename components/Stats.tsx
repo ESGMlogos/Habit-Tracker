@@ -5,9 +5,7 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  ResponsiveContainer,
-  BarChart,
-  Bar
+  ResponsiveContainer
 } from 'recharts';
 import { Habit, HabitLogs, DayStats } from '../types';
 import { getLastNDays } from '../constants';
@@ -23,7 +21,8 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
   const last30Days = getLastNDays(30);
   const data: DayStats[] = last30Days.map(date => {
     let completedCount = 0;
-    const totalActive = habits.filter(h => !h.archived && h.createdAt <= date).length;
+    // FIX: Compare only the YYYY-MM-DD part of createdAt to include habits created today
+    const totalActive = habits.filter(h => !h.archived && h.createdAt.substring(0, 10) <= date).length;
     
     habits.forEach(h => {
       if (logs[h.id]?.includes(date)) {
@@ -37,69 +36,58 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
       totalActive: totalActive,
       percentage: totalActive > 0 ? (completedCount / totalActive) * 100 : 0
     };
-  }).reverse();
+  }); // Removed .reverse() to show chronological order (Oldest -> Newest)
 
   // Calculate generic stats
-  const totalCompletions = Object.values(logs).reduce((acc, curr) => acc + (curr as string[]).length, 0);
+  const totalCompletions = (Object.values(logs) as string[][]).reduce((acc: number, curr) => acc + curr.length, 0);
   const activeHabits = habits.filter(h => !h.archived).length;
   const todayStr = new Date().toISOString().split('T')[0];
   const todayCompletions = habits.filter(h => logs[h.id]?.includes(todayStr)).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       
       {/* Quick Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-          <p className="text-slate-400 text-xs uppercase tracking-wider font-bold">Total Reps</p>
-          <p className="text-2xl font-bold text-white">{totalCompletions}</p>
-        </div>
-        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-          <p className="text-slate-400 text-xs uppercase tracking-wider font-bold">Active Habits</p>
-          <p className="text-2xl font-bold text-indigo-400">{activeHabits}</p>
-        </div>
-        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-          <p className="text-slate-400 text-xs uppercase tracking-wider font-bold">Today's Wins</p>
-          <p className="text-2xl font-bold text-emerald-400">{todayCompletions}</p>
-        </div>
-        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-            <p className="text-slate-400 text-xs uppercase tracking-wider font-bold">Completion Rate</p>
-            <p className="text-2xl font-bold text-blue-400">
-                {data.length > 0 ? Math.round(data.reduce((acc, curr) => acc + curr.percentage, 0) / data.length) : 0}%
-            </p>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <StatCard label="Total Reps" value={totalCompletions} />
+        <StatCard label="Disciplines" value={activeHabits} color="text-[#0c4a6e]" />
+        <StatCard label="Daily Wins" value={todayCompletions} color="text-[#4d7c0f]" />
+        <StatCard 
+            label="Consistency" 
+            value={`${data.length > 0 ? Math.round(data.reduce((acc, curr) => acc + curr.percentage, 0) / data.length) : 0}%`}
+            color="text-[#b45309]"
+        />
       </div>
 
       {/* Main Chart */}
-      <div className="h-[300px] bg-slate-800/30 p-4 rounded-xl border border-slate-800">
-        <h3 className="text-slate-300 font-medium mb-4">30 Day Consistency</h3>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-[350px] bg-white p-6 rounded-sm border border-[#E7E5E4] shadow-sm">
+        <h3 className="text-[#44403C] font-display font-bold text-lg mb-6 border-b border-[#E7E5E4] pb-2">30 Day Consistency</h3>
+        <ResponsiveContainer width="100%" height="85%">
           <AreaChart data={data}>
             <defs>
               <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#b45309" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#b45309" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <XAxis 
                 dataKey="date" 
-                stroke="#64748b" 
+                stroke="#A8A29E" 
                 fontSize={12} 
                 tickLine={false}
                 axisLine={false}
+                fontFamily="Lora, serif"
             />
-            <YAxis 
-                hide={true}
-            />
+            <YAxis hide={true} />
             <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                itemStyle={{ color: '#818cf8' }}
+                contentStyle={{ backgroundColor: '#FDFCF5', border: '1px solid #E7E5E4', borderRadius: '4px', color: '#292524', fontFamily: 'Lora' }}
+                itemStyle={{ color: '#b45309' }}
             />
             <Area 
                 type="monotone" 
                 dataKey="percentage" 
-                stroke="#6366f1" 
-                strokeWidth={3}
+                stroke="#b45309" 
+                strokeWidth={2}
                 fillOpacity={1} 
                 fill="url(#colorCount)" 
             />
@@ -107,30 +95,44 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Mini Heatmap Grid (Visual representation only) */}
-      <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-800">
-        <h3 className="text-slate-300 font-medium mb-4">Heatmap (Last 90 Days)</h3>
-        <div className="flex flex-wrap gap-1">
-            {getLastNDays(90).reverse().map((date) => {
-                 let intensity = 'bg-slate-800';
+      {/* Mini Heatmap Grid */}
+      <div className="bg-white p-6 rounded-sm border border-[#E7E5E4] shadow-sm">
+        <div className="flex justify-between items-center mb-6 border-b border-[#E7E5E4] pb-2">
+            <h3 className="text-[#44403C] font-display font-bold text-lg">Stoic Mosaic (90 Days)</h3>
+            <div className="flex items-center gap-2 text-[10px] text-[#78716c] uppercase tracking-wider font-bold">
+                <span>Less</span>
+                <div className="w-2 h-2 bg-[#F5F5F4]"></div>
+                <div className="w-2 h-2 bg-[#b45309]/30"></div>
+                <div className="w-2 h-2 bg-[#b45309]/50"></div>
+                <div className="w-2 h-2 bg-[#b45309]/70"></div>
+                <div className="w-2 h-2 bg-[#b45309]"></div>
+                <span>More</span>
+            </div>
+        </div>
+        
+        <div className="flex flex-wrap gap-1.5 content-start">
+            {getLastNDays(90).map((date) => {
+                 let intensity = 'bg-[#F5F5F4]'; // Stone 100
                  let completedCount = 0;
                  habits.forEach(h => {
                    if (logs[h.id]?.includes(date)) completedCount++;
                  });
                  
-                 const totalActive = habits.filter(h => !h.archived && h.createdAt <= date).length;
+                 // FIX: Compare only YYYY-MM-DD
+                 const totalActive = habits.filter(h => !h.archived && h.createdAt.substring(0, 10) <= date).length;
                  const pct = totalActive > 0 ? completedCount / totalActive : 0;
 
-                 if (pct > 0) intensity = 'bg-emerald-900';
-                 if (pct > 0.3) intensity = 'bg-emerald-700';
-                 if (pct > 0.6) intensity = 'bg-emerald-500';
-                 if (pct === 1) intensity = 'bg-emerald-400';
+                 // Using Olive/Bronze scales
+                 if (pct > 0) intensity = 'bg-[#b45309]/30';
+                 if (pct > 0.4) intensity = 'bg-[#b45309]/50';
+                 if (pct > 0.7) intensity = 'bg-[#b45309]/70';
+                 if (pct === 1) intensity = 'bg-[#b45309]';
 
                  return (
                      <div 
                         key={date} 
                         title={`${date}: ${Math.round(pct*100)}%`}
-                        className={`w-3 h-3 rounded-sm ${intensity}`}
+                        className={`w-3.5 h-3.5 rounded-[1px] ${intensity} transition-all hover:scale-125 hover:z-10`}
                      />
                  )
             })}
@@ -139,3 +141,10 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
     </div>
   );
 };
+
+const StatCard = ({ label, value, color = 'text-[#292524]' }: { label: string, value: string | number, color?: string }) => (
+    <div className="bg-white p-5 rounded-sm border border-[#E7E5E4] shadow-sm flex flex-col items-center text-center">
+        <p className="text-[#78716c] text-[10px] uppercase tracking-widest font-display font-bold mb-1">{label}</p>
+        <p className={`text-3xl font-display font-bold ${color}`}>{value}</p>
+    </div>
+);

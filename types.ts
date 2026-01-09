@@ -27,15 +27,3 @@ export interface DayStats {
   totalActive: number;
   percentage: number;
 }
-
-export interface AIAnalysisResponse {
-  insight: string;
-  motivationalQuote: string;
-  score: number;
-  suggestions: string[];
-}
-
-export interface AIChatMessage {
-  role: 'user' | 'model';
-  text: string;
-}

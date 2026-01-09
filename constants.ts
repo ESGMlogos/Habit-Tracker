@@ -1,15 +1,16 @@
 import { HabitCategory } from './types';
 
-export const APP_TITLE = "900Days";
+export const APP_TITLE = "900DAYS";
 export const TARGET_DAYS = 900;
 
 export const CATEGORY_COLORS: Record<HabitCategory, string> = {
-  [HabitCategory.HEALTH]: 'bg-emerald-500 text-white',
-  [HabitCategory.FITNESS]: 'bg-orange-500 text-white',
-  [HabitCategory.LEARNING]: 'bg-blue-500 text-white',
-  [HabitCategory.PRODUCTIVITY]: 'bg-violet-500 text-white',
-  [HabitCategory.MINDFULNESS]: 'bg-teal-500 text-white',
-  [HabitCategory.CREATIVITY]: 'bg-pink-500 text-white',
+  // Classical Palette
+  [HabitCategory.HEALTH]: 'bg-[#4d7c0f] text-[#FDFCF5]', // Olive Green (Laurel)
+  [HabitCategory.FITNESS]: 'bg-[#9f1239] text-[#FDFCF5]', // Spartan Red
+  [HabitCategory.LEARNING]: 'bg-[#0c4a6e] text-[#FDFCF5]', // Aegean Blue
+  [HabitCategory.PRODUCTIVITY]: 'bg-[#b45309] text-[#FDFCF5]', // Bronze/Ochre
+  [HabitCategory.MINDFULNESS]: 'bg-[#581c87] text-[#FDFCF5]', // Tyrian Purple
+  [HabitCategory.CREATIVITY]: 'bg-[#c2410c] text-[#FDFCF5]', // Terracotta
 };
 
 export const formatDate = (date: Date): string => {

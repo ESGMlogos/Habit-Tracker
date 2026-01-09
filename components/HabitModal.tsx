@@ -28,34 +28,36 @@ export const HabitModal: React.FC<HabitModalProps> = ({ onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-white">New Habit</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#292524]/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-[#FDFCF5] border border-[#E7E5E4] rounded-sm p-8 shadow-2xl relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#b45309] to-[#c2410c]"></div>
+        
+        <div className="flex justify-between items-center mb-8 border-b border-[#E7E5E4] pb-4">
+          <h2 className="text-2xl font-display font-bold text-[#292524]">New Discipline</h2>
+          <button onClick={onClose} className="text-[#78716c] hover:text-[#b45309] transition-colors">
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Title</label>
+            <label className="block text-xs font-display font-bold uppercase tracking-widest text-[#78716c] mb-2">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Read 10 pages"
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              placeholder="e.g. Read the Stoics"
+              className="w-full bg-white border border-[#D6D3D1] rounded-sm p-3 text-[#292524] placeholder-[#A8A29E] focus:ring-1 focus:ring-[#b45309] focus:border-[#b45309] outline-none font-serif"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Category</label>
+            <label className="block text-xs font-display font-bold uppercase tracking-widest text-[#78716c] mb-2">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as HabitCategory)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="w-full bg-white border border-[#D6D3D1] rounded-sm p-3 text-[#292524] focus:ring-1 focus:ring-[#b45309] focus:border-[#b45309] outline-none font-serif appearance-none"
             >
               {Object.values(HabitCategory).map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -64,21 +66,21 @@ export const HabitModal: React.FC<HabitModalProps> = ({ onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Description (Optional)</label>
+            <label className="block text-xs font-display font-bold uppercase tracking-widest text-[#78716c] mb-2">Description</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Why is this important?"
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              placeholder="What virtue does this cultivate?"
+              className="w-full bg-white border border-[#D6D3D1] rounded-sm p-3 text-[#292524] placeholder-[#A8A29E] focus:ring-1 focus:ring-[#b45309] focus:border-[#b45309] outline-none font-serif"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors mt-2"
+            className="w-full py-3 bg-[#292524] hover:bg-[#44403C] text-[#FDFCF5] font-display font-bold uppercase tracking-widest rounded-sm transition-all shadow-md hover:shadow-lg mt-4"
           >
-            Start Tracking
+            Commit
           </button>
         </form>
       </div>
