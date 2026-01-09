@@ -32,6 +32,37 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #A8A29E; /* Stone 400 */
       }
+
+      /* Animations */
+      @keyframes spin-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes spin-reverse-slower {
+        from { transform: rotate(360deg); }
+        to { transform: rotate(0deg); }
+      }
+      @keyframes fade-out {
+        from { opacity: 1; visibility: visible; }
+        to { opacity: 0; visibility: hidden; }
+      }
+      @keyframes fade-in-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .animate-spin-slow {
+        animation: spin-slow 20s linear infinite;
+      }
+      .animate-spin-reverse-slower {
+        animation: spin-reverse-slower 30s linear infinite;
+      }
+      .animate-fade-out {
+        animation: fade-out 0.8s ease-out forwards;
+      }
+      .animate-fade-in-up {
+        animation: fade-in-up 1s ease-out forwards;
+      }
     </style>
   <script type="importmap">
 {
