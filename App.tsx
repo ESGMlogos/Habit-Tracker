@@ -6,6 +6,7 @@ import { HabitCard } from './components/HabitCard';
 import { Stats } from './components/Stats';
 import { HabitModal } from './components/HabitModal';
 import { CircularFocus } from './components/CircularFocus';
+import { MiniSunburstLogo } from './components/MiniSunburstLogo';
 
 // --- Local Storage Helpers ---
 const STORAGE_KEYS = {
@@ -94,14 +95,20 @@ const App: React.FC = () => {
       
       {/* Sidebar / Navigation - Designed like a stone column */}
       <nav className="w-full md:w-24 lg:w-72 bg-[#F5F5F0] border-r border-[#E7E5E4] flex flex-col items-center md:items-stretch py-8 shrink-0 z-40 shadow-[inset_-1px_0_10px_rgba(0,0,0,0.02)]">
-        <div className="px-6 mb-10 flex flex-col items-center lg:items-start">
-             {/* Classical Title */}
-            <span className="text-3xl font-display font-black tracking-widest text-[#44403C] hidden lg:block border-b-2 border-[#b45309] pb-2">
-                {APP_TITLE}
-            </span>
-            <span className="text-2xl font-display font-black tracking-tighter text-[#44403C] lg:hidden md:hidden">
-                IX
-            </span>
+        <div className="px-6 mb-10 flex flex-col items-center lg:items-start relative group">
+             {/* Desktop Title & Logo Combination */}
+            <div className="hidden lg:flex items-center gap-3 border-b-2 border-[#b45309] pb-2 w-full">
+                <MiniSunburstLogo habits={habits} logs={logs} size={32} />
+                <span className="text-3xl font-display font-black tracking-widest text-[#44403C]">
+                    {APP_TITLE}
+                </span>
+            </div>
+            
+            {/* Mobile/Tablet Logo Only (Replaces IX) */}
+            <div className="lg:hidden md:hidden">
+                 <MiniSunburstLogo habits={habits} logs={logs} size={48} />
+            </div>
+
             <span className="hidden lg:block text-xs uppercase tracking-[0.2em] text-[#78716c] mt-1 font-sans">
                 Academia
             </span>

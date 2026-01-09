@@ -1,23 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Habit, HabitLogs, HabitCategory } from '../types';
-import { formatDate } from '../constants';
+import { Habit, HabitLogs } from '../types';
+import { formatDate, CATEGORY_HEX } from '../constants';
 import { SunburstChart, SunburstNode } from './SunburstChart';
-import { Target, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 interface CircularFocusProps {
   habits: Habit[];
   logs: HabitLogs;
 }
-
-// Map Category to Hex Colors (Classic Palette from constants.ts)
-const CATEGORY_HEX: Record<HabitCategory, string> = {
-  [HabitCategory.HEALTH]: '#4d7c0f',
-  [HabitCategory.FITNESS]: '#9f1239',
-  [HabitCategory.LEARNING]: '#0c4a6e',
-  [HabitCategory.PRODUCTIVITY]: '#b45309',
-  [HabitCategory.MINDFULNESS]: '#581c87',
-  [HabitCategory.CREATIVITY]: '#c2410c',
-};
 
 export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs }) => {
   const [selectedHabitId, setSelectedHabitId] = useState<string>(habits[0]?.id || '');
