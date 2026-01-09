@@ -171,7 +171,7 @@ const App: React.FC = () => {
 
   const getPageSubtitle = () => {
       switch(view) {
-          case 'tracker': return formatDate(new Date(selectedDate));
+          case 'tracker': return selectedDate;
           case 'dashboard': return 'Know Thyself';
           case 'focus': return 'The Obstacle Is The Way';
           default: return '';
