@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, LayoutDashboard, Calendar, Target, Settings2 } from 'lucide-react';
 import { Habit, HabitLogs, HabitCategory } from './types';
-import { APP_TITLE, TARGET_DAYS, formatDate } from './constants';
+import { APP_TITLE, TARGET_DAYS, formatDate, parseDateString } from './constants';
 import { HabitCard } from './components/HabitCard';
 import { Stats } from './components/Stats';
 import { HabitModal } from './components/HabitModal';
@@ -178,6 +178,9 @@ const App: React.FC = () => {
       }
   };
 
+  // Helper to check if selected date is today
+  const isToday = selectedDate === formatDate(new Date());
+
   return (
     <>
       {showIntro && <IntroSequence onComplete={() => setShowIntro(false)} />}
@@ -302,7 +305,7 @@ const App: React.FC = () => {
                       <div className="flex items-center gap-6 bg-white p-3 rounded-sm border border-[#E7E5E4] w-fit shadow-sm">
                           <button 
                               onClick={() => {
-                                  const d = new Date(selectedDate);
+                                  const d = parseDateString(selectedDate);
                                   d.setDate(d.getDate() - 1);
                                   setSelectedDate(formatDate(d));
                               }}
@@ -311,15 +314,15 @@ const App: React.FC = () => {
                               ← Prev
                           </button>
                           <span className="font-display font-bold text-[#b45309] min-w-[120px] text-center text-lg">
-                              {selectedDate === formatDate(new Date()) ? 'Today' : selectedDate}
+                              {isToday ? 'Today' : selectedDate}
                           </span>
                           <button 
                               onClick={() => {
-                                  const d = new Date(selectedDate);
+                                  const d = parseDateString(selectedDate);
                                   d.setDate(d.getDate() + 1);
                                   setSelectedDate(formatDate(d));
                               }}
-                              disabled={selectedDate === formatDate(new Date())}
+                              disabled={isToday}
                               className="p-2 hover:bg-[#F5F5F4] rounded-sm transition-colors text-[#78716c] hover:text-[#292524] disabled:opacity-30 disabled:hover:bg-transparent"
                           >
                               Next →

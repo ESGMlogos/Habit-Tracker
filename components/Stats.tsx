@@ -19,12 +19,19 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
   
   // Prepare data for the last 30 days
   const last30Days = getLastNDays(30);
+  
+  // Filter for currently active habits (non-archived) to benchmark history against current goals
+  const activeHabitsList = habits.filter(h => !h.archived);
+
   const data: DayStats[] = last30Days.map(date => {
     let completedCount = 0;
-    // FIX: Compare only the YYYY-MM-DD part of createdAt to include habits created today
-    const totalActive = habits.filter(h => !h.archived && h.createdAt.substring(0, 10) <= date).length;
     
-    habits.forEach(h => {
+    // We calculate "Consistency" based on the habits you have *now*.
+    // This allows backfilling to show up on the chart immediately, 
+    // and holds past days to the standard of your current discipline list.
+    const totalActive = activeHabitsList.length;
+    
+    activeHabitsList.forEach(h => {
       if (logs[h.id]?.includes(date)) {
         completedCount++;
       }
@@ -36,21 +43,21 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
       totalActive: totalActive,
       percentage: totalActive > 0 ? (completedCount / totalActive) * 100 : 0
     };
-  }); // Removed .reverse() to show chronological order (Oldest -> Newest)
+  }); 
 
   // Calculate generic stats
   const totalCompletions = (Object.values(logs) as string[][]).reduce((acc: number, curr) => acc + curr.length, 0);
-  const activeHabits = habits.filter(h => !h.archived).length;
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayCompletions = habits.filter(h => logs[h.id]?.includes(todayStr)).length;
+  const activeHabitsCount = activeHabitsList.length;
+  const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+  const todayCompletions = activeHabitsList.filter(h => logs[h.id]?.includes(todayStr)).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       
       {/* Quick Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <StatCard label="Total Reps" value={totalCompletions} />
-        <StatCard label="Disciplines" value={activeHabits} color="text-[#0c4a6e]" />
+        <StatCard label="Disciplines" value={activeHabitsCount} color="text-[#0c4a6e]" />
         <StatCard label="Daily Wins" value={todayCompletions} color="text-[#4d7c0f]" />
         <StatCard 
             label="Consistency" 
@@ -77,19 +84,22 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
                 tickLine={false}
                 axisLine={false}
                 fontFamily="Lora, serif"
+                tickMargin={10}
             />
-            <YAxis hide={true} />
+            <YAxis hide={true} domain={[0, 100]} />
             <Tooltip 
-                contentStyle={{ backgroundColor: '#FDFCF5', border: '1px solid #E7E5E4', borderRadius: '4px', color: '#292524', fontFamily: 'Lora' }}
-                itemStyle={{ color: '#b45309' }}
+                contentStyle={{ backgroundColor: '#FDFCF5', border: '1px solid #E7E5E4', borderRadius: '4px', color: '#292524', fontFamily: 'Lora', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}
+                itemStyle={{ color: '#b45309', fontWeight: 'bold' }}
+                formatter={(value: number) => [`${Math.round(value)}%`, 'Consistency']}
             />
             <Area 
-                type="monotone" 
+                type="linear" 
                 dataKey="percentage" 
                 stroke="#b45309" 
                 strokeWidth={2}
                 fillOpacity={1} 
                 fill="url(#colorCount)" 
+                animationDuration={1500}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -114,12 +124,13 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
             {getLastNDays(90).map((date) => {
                  let intensity = 'bg-[#F5F5F4]'; // Stone 100
                  let completedCount = 0;
-                 habits.forEach(h => {
+                 
+                 // Same logic: compare against current active habits
+                 activeHabitsList.forEach(h => {
                    if (logs[h.id]?.includes(date)) completedCount++;
                  });
                  
-                 // FIX: Compare only YYYY-MM-DD
-                 const totalActive = habits.filter(h => !h.archived && h.createdAt.substring(0, 10) <= date).length;
+                 const totalActive = activeHabitsList.length;
                  const pct = totalActive > 0 ? completedCount / totalActive : 0;
 
                  // Using Olive/Bronze scales
@@ -143,7 +154,7 @@ export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
 };
 
 const StatCard = ({ label, value, color = 'text-[#292524]' }: { label: string, value: string | number, color?: string }) => (
-    <div className="bg-white p-5 rounded-sm border border-[#E7E5E4] shadow-sm flex flex-col items-center text-center">
+    <div className="bg-white p-5 rounded-sm border border-[#E7E5E4] shadow-sm flex flex-col items-center text-center hover:border-[#b45309]/30 transition-colors">
         <p className="text-[#78716c] text-[10px] uppercase tracking-widest font-display font-bold mb-1">{label}</p>
         <p className={`text-3xl font-display font-bold ${color}`}>{value}</p>
     </div>
