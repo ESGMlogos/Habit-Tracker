@@ -35,11 +35,13 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
 
   const handleClick = () => {
     // 1. Add Momentum (Physics)
-    // We add to the current velocity, so rapid clicks accelerate the spin
-    velocityRef.current += 25; 
+    // Increased from 25 to 100.
+    // Math: 100 initial velocity / (1 - 0.95 friction) = ~2000 degrees total rotation (~5.5 revolutions)
+    velocityRef.current += 100; 
     
-    // Cap max speed to prevent visual glitching
-    if (velocityRef.current > 100) velocityRef.current = 100;
+    // Cap max speed higher to allow rapid clicking to stack momentum significantly
+    // Previous cap was 100, increased to 400.
+    if (velocityRef.current > 400) velocityRef.current = 400;
 
     // Start the physics loop if it's not running
     if (!animationFrameRef.current) {
