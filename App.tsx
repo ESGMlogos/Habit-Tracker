@@ -86,8 +86,8 @@ const App: React.FC = () => {
         // If all others are done, and we just clicked the last one, triggers victory
         if (allOthersDone && activeHabits.length > 0) {
             setShowCelebration(true);
-            // Hide celebration after 4.5 seconds (matches animation duration)
-            setTimeout(() => setShowCelebration(false), 4500);
+            // Hide celebration after 5.5 seconds (matches animation duration: 4.5s delay + 1.2s fade ≈ 5.7s)
+            setTimeout(() => setShowCelebration(false), 5500);
         }
     }
   };

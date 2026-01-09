@@ -9,13 +9,14 @@ export const IntroSequence: React.FC<IntroSequenceProps> = ({ onComplete }) => {
   const [textStep, setTextStep] = useState(0);
 
   useEffect(() => {
-    // Text Reveal Timing
-    setTimeout(() => setTextStep(1), 500); // "Entering..."
-    setTimeout(() => setTextStep(2), 1500); // "The Warrior's Path"
+    // Text Reveal Timing - slightly delayed for drama
+    setTimeout(() => setTextStep(1), 800); // "Entering..."
+    setTimeout(() => setTextStep(2), 2000); // "The Warrior's Path"
     
-    // Exit Timing
-    setTimeout(() => setFading(true), 3500);
-    setTimeout(() => onComplete(), 4300); // Wait for fade out animation
+    // Exit Timing - extended to allow reading and smooth fade
+    setTimeout(() => setFading(true), 4000);
+    // Wait for the 1000ms fade transition to fully complete + buffer
+    setTimeout(() => onComplete(), 5100); 
   }, [onComplete]);
 
   // Procedural geometry for the wheel
@@ -53,7 +54,7 @@ export const IntroSequence: React.FC<IntroSequenceProps> = ({ onComplete }) => {
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#FDFCF5] transition-opacity duration-1000 ${fading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#FDFCF5] transition-opacity duration-1000 ease-in-out ${fading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
     >
       <div className="relative w-[300px] h-[300px] md:w-[400px] md:h-[400px] text-[#44403C]">
         
@@ -85,13 +86,13 @@ export const IntroSequence: React.FC<IntroSequenceProps> = ({ onComplete }) => {
       </div>
 
       <div className="mt-12 text-center h-24">
-        <p className={`font-serif text-[#b45309] text-sm tracking-[0.3em] uppercase mb-3 transition-all duration-700 transform ${textStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <p className={`font-serif text-[#b45309] text-sm tracking-[0.3em] uppercase mb-3 transition-all duration-1000 transform ${textStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             Entering
         </p>
-        <h1 className={`font-display text-3xl md:text-5xl font-black text-[#292524] tracking-widest transition-all duration-1000 transform ${textStep >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+        <h1 className={`font-display text-3xl md:text-5xl font-black text-[#292524] tracking-widest transition-all duration-1000 ease-out transform ${textStep >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
             WARRIOR'S PATH
         </h1>
-        <div className={`w-16 h-1 bg-[#b45309] mx-auto mt-6 transition-all duration-1000 ${textStep >= 2 ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}></div>
+        <div className={`w-16 h-1 bg-[#b45309] mx-auto mt-6 transition-all duration-1000 delay-300 ${textStep >= 2 ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}></div>
       </div>
     </div>
   );

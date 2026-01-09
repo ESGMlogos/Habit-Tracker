@@ -35,7 +35,7 @@ export const Celebration: React.FC = () => {
         this.y = canvas!.height / 2;
         // Explosion velocity
         const angle = Math.random() * Math.PI * 2;
-        const velocity = Math.random() * 25 + 5; // Fast burst
+        const velocity = Math.random() * 20 + 8; // Slightly more consistent burst
         
         this.vx = Math.cos(angle) * velocity;
         this.vy = Math.sin(angle) * velocity;
@@ -43,16 +43,16 @@ export const Celebration: React.FC = () => {
         this.size = Math.random() * 12 + 6;
         this.color = colors[Math.floor(Math.random() * colors.length)];
         this.rotation = Math.random() * 360;
-        this.rotationSpeed = (Math.random() - 0.5) * 15;
+        this.rotationSpeed = (Math.random() - 0.5) * 10;
         this.shape = Math.random() > 0.5 ? 'square' : 'triangle';
-        this.friction = 0.96; // Air resistance
+        this.friction = 0.97; // Less friction for floatier feeling (was 0.96)
       }
 
       update() {
         this.vx *= this.friction;
         this.vy *= this.friction;
         
-        this.vy += 0.8; // Gravity
+        this.vy += 0.6; // Slightly reduced gravity (was 0.8)
         
         this.x += this.vx;
         this.y += this.vy;
@@ -124,15 +124,16 @@ export const Celebration: React.FC = () => {
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       
       {/* Victory Text with Slam Effect */}
-      <div className="relative z-10 text-center animate-fade-out" style={{ animationDelay: '3.5s', animationDuration: '1s', animationFillMode: 'forwards' }}>
+      {/* Delayed fade-out start to 4.5s */}
+      <div className="relative z-10 text-center animate-fade-out" style={{ animationDelay: '4.5s', animationFillMode: 'forwards' }}>
           <h2 
-            className="font-display font-black text-6xl md:text-8xl text-[#b45309] drop-shadow-xl tracking-widest scale-0 animate-[popup_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)_forwards]"
-            style={{ textShadow: '0 4px 0 #78350f' }}
+            className="font-display font-black text-6xl md:text-8xl text-[#b45309] drop-shadow-xl tracking-widest scale-0 animate-[popup_0.8s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
+            style={{ textShadow: '0 4px 0 #78350f', animationDelay: '0.3s' }} 
           >
             VICTORY
           </h2>
-          <div className="h-1 w-0 bg-[#292524] mx-auto mt-4 animate-[expandWidth_0.8s_ease-out_0.5s_forwards]"></div>
-          <p className="font-serif text-[#292524] font-bold tracking-[0.3em] uppercase mt-4 opacity-0 animate-[fadeIn_0.5s_ease-out_1s_forwards]">
+          <div className="h-1 w-0 bg-[#292524] mx-auto mt-4 animate-[expandWidth_1s_ease-out_0.8s_forwards]"></div>
+          <p className="font-serif text-[#292524] font-bold tracking-[0.3em] uppercase mt-4 opacity-0 animate-[fadeIn_0.8s_ease-out_1.2s_forwards]">
             The Day Is Won
           </p>
       </div>
