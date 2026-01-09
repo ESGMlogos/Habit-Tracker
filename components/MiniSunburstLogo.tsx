@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Habit, HabitLogs } from '../types';
 import { getCategoryHexColor, formatDate } from '../constants';
 
@@ -14,6 +14,77 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
   
   // Use the passed date, or default to today if not provided
   const targetDate = selectedDate || formatDate(new Date());
+
+  // Physics Refs
+  const svgRef = useRef<SVGSVGElement>(null);
+  const velocityRef = useRef(0);
+  const rotationRef = useRef(0);
+  const animationFrameRef = useRef<number | null>(null);
+  
+  // Pulse State
+  const [isPulsing, setIsPulsing] = useState(false);
+  
+  // Clean up animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  const handleClick = () => {
+    // 1. Add Momentum (Physics)
+    // We add to the current velocity, so rapid clicks accelerate the spin
+    velocityRef.current += 25; 
+    
+    // Cap max speed to prevent visual glitching
+    if (velocityRef.current > 100) velocityRef.current = 100;
+
+    // Start the physics loop if it's not running
+    if (!animationFrameRef.current) {
+        runPhysicsLoop();
+    }
+
+    // 2. Trigger Pulse (Expansion/Contraction)
+    setIsPulsing(true);
+    // Reset pulse after a short delay to allow re-triggering
+    setTimeout(() => setIsPulsing(false), 200);
+  };
+
+  const runPhysicsLoop = () => {
+    // Friction coefficient (0.0 - 1.0). Lower = stops faster.
+    const FRICTION = 0.95; 
+    const STOP_THRESHOLD = 0.1;
+
+    // Apply friction
+    velocityRef.current *= FRICTION;
+    
+    // Apply velocity to rotation
+    rotationRef.current += velocityRef.current;
+
+    // Apply transform to DOM
+    if (svgRef.current) {
+        // We use a CSS variable or direct style for performance
+        svgRef.current.style.transform = `rotate(${rotationRef.current}deg) ${isPulsing ? 'scale(1.15)' : 'scale(1)'}`;
+    }
+
+    // Check if we should continue animating
+    if (Math.abs(velocityRef.current) > STOP_THRESHOLD) {
+        animationFrameRef.current = requestAnimationFrame(runPhysicsLoop);
+    } else {
+        velocityRef.current = 0;
+        animationFrameRef.current = null;
+    }
+  };
+
+  // If isPulsing changes, we need to update the transform immediately 
+  // to ensure the scale effect happens even if rotation is slow
+  useEffect(() => {
+    if (svgRef.current) {
+        svgRef.current.style.transform = `rotate(${rotationRef.current}deg) ${isPulsing ? 'scale(1.15)' : 'scale(1)'}`;
+    }
+  }, [isPulsing]);
   
   // Geometry
   const center = size / 2;
@@ -85,13 +156,18 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
   }, [activeHabits, logs, targetDate, center, outerRadius, innerRadius]);
 
   return (
-    <div className="relative group cursor-pointer" style={{ width: size, height: size }}>
-       {/* Rotating Container on Hover */}
+    <div 
+        className="relative group cursor-pointer select-none" 
+        style={{ width: size, height: size }}
+        onClick={handleClick}
+    >
+       {/* Rotating Container */}
       <svg 
+        ref={svgRef}
         width={size} 
         height={size} 
         viewBox={`0 0 ${size} ${size}`} 
-        className="transition-transform duration-700 ease-in-out group-hover:rotate-180"
+        className="transition-transform duration-150 ease-out origin-center will-change-transform"
       >
         {/* Empty State / Decorative Background */}
         {slices.length === 0 && (
@@ -122,7 +198,7 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
       </svg>
       
       {/* Absolute positioning pulse effect behind */}
-      <div className="absolute inset-0 bg-[#b45309]/20 rounded-full scale-0 group-hover:scale-125 transition-transform duration-500 -z-10 blur-sm"></div>
+      <div className={`absolute inset-0 bg-[#b45309]/20 rounded-full transition-transform duration-200 -z-10 blur-sm ${isPulsing ? 'scale-150 opacity-100' : 'scale-0 opacity-0'}`}></div>
     </div>
   );
 };
