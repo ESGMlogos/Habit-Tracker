@@ -6,11 +6,14 @@ interface MiniSunburstLogoProps {
   habits: Habit[];
   logs: HabitLogs;
   size?: number;
+  selectedDate?: string;
 }
 
-export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs, size = 48 }) => {
+export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs, size = 48, selectedDate }) => {
   const activeHabits = habits.filter(h => !h.archived);
-  const today = formatDate(new Date());
+  
+  // Use the passed date, or default to today if not provided
+  const targetDate = selectedDate || formatDate(new Date());
   
   // Geometry
   const center = size / 2;
@@ -46,7 +49,9 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
     const gap = total > 1 ? 2 : 0; // Degree gap between slices
 
     return activeHabits.map((habit, index) => {
-      const isCompleted = logs[habit.id]?.includes(today);
+      // Check completion against the specific target date
+      const isCompleted = logs[habit.id]?.includes(targetDate);
+      
       const startAngle = index * anglePerSlice + (gap / 2);
       const endAngle = (index + 1) * anglePerSlice - (gap / 2);
       
@@ -77,7 +82,7 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
         opacity: isCompleted ? 1 : 0.5
       };
     });
-  }, [activeHabits, logs, today, center, outerRadius, innerRadius]);
+  }, [activeHabits, logs, targetDate, center, outerRadius, innerRadius]);
 
   return (
     <div className="relative group cursor-pointer" style={{ width: size, height: size }}>

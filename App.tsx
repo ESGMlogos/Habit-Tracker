@@ -130,7 +130,7 @@ const App: React.FC = () => {
           <div className="px-6 mb-10 flex flex-col items-center lg:items-start relative group">
                {/* Desktop Title & Logo Combination */}
               <div className="hidden lg:flex items-center gap-3 border-b-2 border-[#b45309] pb-2 w-full">
-                  <MiniSunburstLogo habits={habits} logs={logs} size={32} />
+                  <MiniSunburstLogo habits={habits} logs={logs} size={32} selectedDate={selectedDate} />
                   <span className="text-3xl font-display font-black tracking-widest text-[#44403C]">
                       {APP_TITLE}
                   </span>
@@ -138,7 +138,7 @@ const App: React.FC = () => {
               
               {/* Mobile/Tablet Logo Only (Replaces IX) */}
               <div className="lg:hidden md:hidden">
-                   <MiniSunburstLogo habits={habits} logs={logs} size={48} />
+                   <MiniSunburstLogo habits={habits} logs={logs} size={48} selectedDate={selectedDate} />
               </div>
 
               <span className="hidden lg:block text-xs uppercase tracking-[0.2em] text-[#78716c] mt-1 font-sans">
