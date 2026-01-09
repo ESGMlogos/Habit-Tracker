@@ -10,6 +10,8 @@ interface ControlPanelProps {
   categories: string[];
   onToggleArchive: (id: string) => void;
   onDelete: (id: string) => void;
+  onAddHabit: (habit: Habit) => void;
+  onUpdateHabit: (habit: Habit) => void;
   onAddCategory: (name: string) => void;
   onUpdateCategory: (oldName: string, newName: string) => void;
   onDeleteCategory: (name: string) => void;
@@ -24,14 +26,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   categories,
   onToggleArchive, 
   onDelete,
+  onAddHabit,
+  onUpdateHabit,
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('habits');
+  
+  // Category State
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
+  const [editCategoryValue, setEditCategoryValue] = useState('');
+
+  // Habit State
+  const [isCreatingHabit, setIsCreatingHabit] = useState(false);
+  const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
+  const [habitForm, setHabitForm] = useState({ title: '', category: '', description: '' });
 
   // Group habits by category
   const groupedHabits = React.useMemo(() => {
@@ -42,6 +53,52 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     return groups;
   }, [habits, categories]);
 
+  // --- Habit Actions ---
+  const initCreateHabit = () => {
+      setIsCreatingHabit(true);
+      setEditingHabitId(null);
+      setHabitForm({ title: '', category: categories[0] || 'General', description: '' });
+  };
+
+  const initEditHabit = (habit: Habit) => {
+      setEditingHabitId(habit.id);
+      setIsCreatingHabit(false);
+      setHabitForm({ title: habit.title, category: habit.category, description: habit.description });
+  };
+
+  const cancelHabitForm = () => {
+      setIsCreatingHabit(false);
+      setEditingHabitId(null);
+      setHabitForm({ title: '', category: '', description: '' });
+  };
+
+  const saveHabit = () => {
+      if (!habitForm.title.trim()) return;
+
+      if (isCreatingHabit) {
+          onAddHabit({
+              id: crypto.randomUUID(),
+              title: habitForm.title,
+              category: habitForm.category || categories[0],
+              description: habitForm.description,
+              createdAt: new Date().toISOString(),
+              archived: false
+          });
+      } else if (editingHabitId) {
+          const original = habits.find(h => h.id === editingHabitId);
+          if (original) {
+              onUpdateHabit({
+                  ...original,
+                  title: habitForm.title,
+                  category: habitForm.category || categories[0],
+                  description: habitForm.description
+              });
+          }
+      }
+      cancelHabitForm();
+  };
+
+  // --- Category Actions ---
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     if(newCategory.trim()) {
@@ -50,17 +107,17 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     }
   };
 
-  const startEditing = (category: string) => {
+  const startEditingCategory = (category: string) => {
     setEditingCategory(category);
-    setEditValue(category);
+    setEditCategoryValue(category);
   };
 
-  const saveEditing = () => {
-      if (editingCategory && editValue.trim() && editValue !== editingCategory) {
-          onUpdateCategory(editingCategory, editValue.trim());
+  const saveEditingCategory = () => {
+      if (editingCategory && editCategoryValue.trim() && editCategoryValue !== editingCategory) {
+          onUpdateCategory(editingCategory, editCategoryValue.trim());
       }
       setEditingCategory(null);
-      setEditValue('');
+      setEditCategoryValue('');
   };
 
   return (
@@ -119,6 +176,70 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* VIEW: HABITS */}
             {activeTab === 'habits' && (
                 <>
+                {/* Create New Habit Button */}
+                {!isCreatingHabit && !editingHabitId && (
+                    <button 
+                        onClick={initCreateHabit}
+                        className="w-full py-3 border-2 border-dashed border-[#D6D3D1] hover:border-[#b45309] text-[#78716c] hover:text-[#b45309] rounded-sm flex items-center justify-center gap-2 transition-all group mb-4"
+                    >
+                        <Plus size={20} className="group-hover:scale-110 transition-transform" />
+                        <span className="font-display font-bold uppercase tracking-wide text-sm">New Discipline</span>
+                    </button>
+                )}
+
+                {/* Inline Habit Form (Create or Edit) */}
+                {(isCreatingHabit || editingHabitId) && (
+                    <div className="p-4 bg-white border border-[#b45309] rounded-sm shadow-sm mb-6 animate-fade-in-up">
+                        <div className="flex justify-between items-center mb-4 pb-2 border-b border-[#E7E5E4]">
+                            <h4 className="font-display font-bold text-[#b45309] uppercase tracking-wider text-xs">
+                                {isCreatingHabit ? 'Create Discipline' : 'Edit Discipline'}
+                            </h4>
+                            <div className="flex gap-1">
+                                <button onClick={saveHabit} className="p-1 hover:bg-[#F0FDF4] text-[#15803d] rounded-sm">
+                                    <Check size={18} />
+                                </button>
+                                <button onClick={cancelHabitForm} className="p-1 hover:bg-[#FEF2F2] text-[#ef4444] rounded-sm">
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-[10px] text-[#A8A29E] uppercase font-bold mb-1">Title</label>
+                                <input 
+                                    type="text" 
+                                    value={habitForm.title}
+                                    onChange={(e) => setHabitForm({...habitForm, title: e.target.value})}
+                                    className="w-full border border-[#D6D3D1] p-2 rounded-sm text-sm text-[#292524] outline-none focus:border-[#b45309]"
+                                    placeholder="Discipline Name"
+                                    autoFocus
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] text-[#A8A29E] uppercase font-bold mb-1">Category</label>
+                                <select 
+                                    value={habitForm.category}
+                                    onChange={(e) => setHabitForm({...habitForm, category: e.target.value})}
+                                    className="w-full border border-[#D6D3D1] p-2 rounded-sm text-sm text-[#292524] outline-none focus:border-[#b45309]"
+                                >
+                                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] text-[#A8A29E] uppercase font-bold mb-1">Description</label>
+                                <input 
+                                    type="text" 
+                                    value={habitForm.description}
+                                    onChange={(e) => setHabitForm({...habitForm, description: e.target.value})}
+                                    className="w-full border border-[#D6D3D1] p-2 rounded-sm text-sm text-[#292524] outline-none focus:border-[#b45309]"
+                                    placeholder="Description..."
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* List of Habits */}
                 {categories.map((category) => {
                     const categoryHabits = groupedHabits[category];
                     if (!categoryHabits || categoryHabits.length === 0) return null;
@@ -133,56 +254,72 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                             </div>
 
                             <div className="space-y-3">
-                                {categoryHabits.map(habit => (
-                                    <div 
-                                        key={habit.id} 
-                                        className={`
-                                            group flex items-center justify-between p-4 rounded-sm border transition-all duration-300
-                                            ${habit.archived 
-                                                ? 'bg-[#F5F5F4] border-[#E7E5E4] opacity-70 grayscale' 
-                                                : 'bg-white border-[#E7E5E4] hover:border-[#b45309]/30 hover:shadow-sm'
-                                            }
-                                        `}
-                                    >
-                                        <div className="flex-1 pr-4">
-                                            <h4 className={`font-display font-bold text-sm ${habit.archived ? 'text-[#78716c] line-through' : 'text-[#292524]'}`}>
-                                                {habit.title}
-                                            </h4>
-                                            <p className="font-serif text-xs text-[#78716c] italic mt-0.5 truncate">
-                                                {habit.description}
-                                            </p>
-                                        </div>
+                                {categoryHabits.map(habit => {
+                                    // Don't show the row if it's currently being edited
+                                    if (habit.id === editingHabitId) return null;
 
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => onToggleArchive(habit.id)}
-                                                title={habit.archived ? "Restore" : "Archive"}
-                                                className="p-2 text-[#78716c] hover:text-[#b45309] hover:bg-[#F5F5F4] rounded-sm transition-colors"
-                                            >
-                                                {habit.archived ? <ArchiveRestore size={18} /> : <Archive size={18} />}
-                                            </button>
-                                            
-                                            <div className="w-px h-4 bg-[#E7E5E4] mx-1"></div>
+                                    return (
+                                        <div 
+                                            key={habit.id} 
+                                            className={`
+                                                group flex items-center justify-between p-4 rounded-sm border transition-all duration-300
+                                                ${habit.archived 
+                                                    ? 'bg-[#F5F5F4] border-[#E7E5E4] opacity-70 grayscale' 
+                                                    : 'bg-white border-[#E7E5E4] hover:border-[#b45309]/30 hover:shadow-sm'
+                                                }
+                                            `}
+                                        >
+                                            <div className="flex-1 pr-4">
+                                                <h4 className={`font-display font-bold text-sm ${habit.archived ? 'text-[#78716c] line-through' : 'text-[#292524]'}`}>
+                                                    {habit.title}
+                                                </h4>
+                                                <p className="font-serif text-xs text-[#78716c] italic mt-0.5 truncate">
+                                                    {habit.description}
+                                                </p>
+                                            </div>
 
-                                            <button
-                                                onClick={() => {
-                                                    if(confirm('Are you sure you want to delete this discipline permanently?')) {
-                                                        onDelete(habit.id);
-                                                    }
-                                                }}
-                                                title="Delete Permanently"
-                                                className="p-2 text-[#78716c] hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => initEditHabit(habit)}
+                                                    title="Edit"
+                                                    disabled={isCreatingHabit || editingHabitId !== null}
+                                                    className="p-2 text-[#78716c] hover:text-[#b45309] hover:bg-[#F5F5F4] rounded-sm transition-colors disabled:opacity-30"
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => onToggleArchive(habit.id)}
+                                                    title={habit.archived ? "Restore" : "Archive"}
+                                                    disabled={isCreatingHabit || editingHabitId !== null}
+                                                    className="p-2 text-[#78716c] hover:text-[#b45309] hover:bg-[#F5F5F4] rounded-sm transition-colors disabled:opacity-30"
+                                                >
+                                                    {habit.archived ? <ArchiveRestore size={18} /> : <Archive size={18} />}
+                                                </button>
+                                                
+                                                <div className="w-px h-4 bg-[#E7E5E4] mx-1"></div>
+
+                                                <button
+                                                    onClick={() => {
+                                                        if(confirm('Are you sure you want to delete this discipline permanently?')) {
+                                                            onDelete(habit.id);
+                                                        }
+                                                    }}
+                                                    title="Delete Permanently"
+                                                    disabled={isCreatingHabit || editingHabitId !== null}
+                                                    className="p-2 text-[#78716c] hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors disabled:opacity-30"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     );
                 })}
-                {habits.length === 0 && (
+                {habits.length === 0 && !isCreatingHabit && (
                     <div className="text-center py-12 opacity-50">
                         <p className="font-serif italic text-[#78716c]">No disciplines recorded.</p>
                     </div>
@@ -221,13 +358,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                                     <div className="flex items-center gap-2 flex-1">
                                         <input 
                                             type="text" 
-                                            value={editValue}
-                                            onChange={(e) => setEditValue(e.target.value)}
+                                            value={editCategoryValue}
+                                            onChange={(e) => setEditCategoryValue(e.target.value)}
                                             className="flex-1 bg-[#F5F5F4] border border-[#b45309] rounded-sm px-2 py-1 text-sm text-[#292524] font-display font-bold outline-none"
                                             autoFocus
-                                            onKeyDown={(e) => e.key === 'Enter' && saveEditing()}
+                                            onKeyDown={(e) => e.key === 'Enter' && saveEditingCategory()}
                                         />
-                                        <button onClick={saveEditing} className="text-[#15803d] p-1 hover:bg-[#F0FDF4] rounded-sm">
+                                        <button onClick={saveEditingCategory} className="text-[#15803d] p-1 hover:bg-[#F0FDF4] rounded-sm">
                                             <Check size={16} />
                                         </button>
                                         <button onClick={() => setEditingCategory(null)} className="text-[#ef4444] p-1 hover:bg-[#FEF2F2] rounded-sm">
@@ -246,7 +383,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                                         
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button 
-                                                onClick={() => startEditing(cat)}
+                                                onClick={() => startEditingCategory(cat)}
                                                 className="p-1.5 text-[#78716c] hover:text-[#b45309] hover:bg-[#F5F5F4] rounded-sm transition-colors"
                                             >
                                                 <Pencil size={16} />

@@ -106,6 +106,10 @@ const App: React.FC = () => {
     setHabits(prev => [...prev, habit]);
   };
 
+  const updateHabit = (updatedHabit: Habit) => {
+    setHabits(prev => prev.map(h => h.id === updatedHabit.id ? updatedHabit : h));
+  };
+
   const deleteHabit = (id: string) => {
     setHabits(prev => prev.filter(h => h.id !== id));
     // Optional: Clean up logs
@@ -185,6 +189,8 @@ const App: React.FC = () => {
         onClose={() => setIsControlPanelOpen(false)}
         habits={habits}
         categories={categories}
+        onAddHabit={addHabit}
+        onUpdateHabit={updateHabit}
         onDelete={deleteHabit}
         onToggleArchive={toggleArchiveHabit}
         onAddCategory={addCategory}
