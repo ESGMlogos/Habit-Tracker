@@ -1,6 +1,6 @@
 import React from 'react';
-import { Habit, HabitCategory } from '../types';
-import { CATEGORY_COLORS, formatDate } from '../constants';
+import { Habit } from '../types';
+import { getCategoryColorClass, formatDate } from '../constants';
 import { Check, Flame } from 'lucide-react';
 
 interface HabitCardProps {
@@ -46,7 +46,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, logs, onToggle, sel
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
-            <span className={`px-2 py-0.5 text-[9px] uppercase font-display font-bold tracking-widest rounded-sm shadow-sm ${CATEGORY_COLORS[habit.category]}`}>
+            <span className={`px-2 py-0.5 text-[9px] uppercase font-display font-bold tracking-widest rounded-sm shadow-sm ${getCategoryColorClass(habit.category)}`}>
               {habit.category}
             </span>
             {streak > 2 && (

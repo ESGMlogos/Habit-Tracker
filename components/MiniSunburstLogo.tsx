@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Habit, HabitLogs } from '../types';
-import { CATEGORY_HEX, formatDate } from '../constants';
+import { getCategoryHexColor, formatDate } from '../constants';
 
 interface MiniSunburstLogoProps {
   habits: Habit[];
@@ -78,7 +78,7 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
         id: habit.id,
         title: habit.title,
         path,
-        color: isCompleted ? CATEGORY_HEX[habit.category] : '#E7E5E4', // Color or Stone-200
+        color: isCompleted ? getCategoryHexColor(habit.category) : '#E7E5E4', // Color or Stone-200
         opacity: isCompleted ? 1 : 0.5
       };
     });

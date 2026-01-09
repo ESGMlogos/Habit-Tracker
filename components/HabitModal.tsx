@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { Habit, HabitCategory } from '../types';
+import { Habit } from '../types';
 import { X } from 'lucide-react';
 
 interface HabitModalProps {
   onClose: () => void;
   onSave: (habit: Habit) => void;
+  categories: string[];
 }
 
-export const HabitModal: React.FC<HabitModalProps> = ({ onClose, onSave }) => {
+export const HabitModal: React.FC<HabitModalProps> = ({ onClose, onSave, categories }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<HabitCategory>(HabitCategory.HEALTH);
+  const [category, setCategory] = useState<string>(categories[0] || 'General');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,10 +57,10 @@ export const HabitModal: React.FC<HabitModalProps> = ({ onClose, onSave }) => {
             <label className="block text-xs font-display font-bold uppercase tracking-widest text-[#78716c] mb-2">Category</label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value as HabitCategory)}
+              onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-white border border-[#D6D3D1] rounded-sm p-3 text-[#292524] focus:ring-1 focus:ring-[#b45309] focus:border-[#b45309] outline-none font-serif appearance-none"
             >
-              {Object.values(HabitCategory).map((c) => (
+              {categories.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>

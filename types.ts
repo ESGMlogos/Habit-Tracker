@@ -2,7 +2,7 @@ export interface Habit {
   id: string;
   title: string;
   description: string;
-  category: HabitCategory;
+  category: string; // Changed from HabitCategory enum to string to allow dynamic categories
   createdAt: string; // ISO Date string
   archived: boolean;
 }

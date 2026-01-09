@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, LayoutDashboard, Calendar, Target, Menu, Column } from 'lucide-react';
-import { Habit, HabitLogs } from './types';
+import { Plus, LayoutDashboard, Calendar, Target, Settings2 } from 'lucide-react';
+import { Habit, HabitLogs, HabitCategory } from './types';
 import { APP_TITLE, TARGET_DAYS, formatDate } from './constants';
 import { HabitCard } from './components/HabitCard';
 import { Stats } from './components/Stats';
@@ -9,19 +9,23 @@ import { CircularFocus } from './components/CircularFocus';
 import { MiniSunburstLogo } from './components/MiniSunburstLogo';
 import { IntroSequence } from './components/IntroSequence';
 import { Celebration } from './components/Celebration';
+import { ControlPanel } from './components/ControlPanel';
 
 // --- Local Storage Helpers ---
 const STORAGE_KEYS = {
   HABITS: '900days_habits',
   LOGS: '900days_logs',
-  START_DATE: '900days_start'
+  START_DATE: '900days_start',
+  CATEGORIES: '900days_categories'
 };
 
 const App: React.FC = () => {
   const [showIntro, setShowIntro] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLogs>({});
+  const [categories, setCategories] = useState<string[]>(Object.values(HabitCategory));
   const [view, setView] = useState<'tracker' | 'dashboard' | 'focus'>('tracker');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
@@ -37,9 +41,11 @@ const App: React.FC = () => {
     const storedHabits = localStorage.getItem(STORAGE_KEYS.HABITS);
     const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
     const storedStart = localStorage.getItem(STORAGE_KEYS.START_DATE);
+    const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
 
     if (storedHabits) setHabits(JSON.parse(storedHabits));
     if (storedLogs) setLogs(JSON.parse(storedLogs));
+    if (storedCategories) setCategories(JSON.parse(storedCategories));
     
     if (storedStart) {
       setStartDate(storedStart);
@@ -58,6 +64,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
   }, [logs]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+  }, [categories]);
 
   // --- Actions ---
   const toggleHabit = (habitId: string, date: string) => {
@@ -96,6 +106,52 @@ const App: React.FC = () => {
     setHabits(prev => [...prev, habit]);
   };
 
+  const deleteHabit = (id: string) => {
+    setHabits(prev => prev.filter(h => h.id !== id));
+    // Optional: Clean up logs
+    setLogs(prev => {
+        const newLogs = { ...prev };
+        delete newLogs[id];
+        return newLogs;
+    });
+  };
+
+  const toggleArchiveHabit = (id: string) => {
+    setHabits(prev => prev.map(h => 
+        h.id === id ? { ...h, archived: !h.archived } : h
+    ));
+  };
+
+  // --- Category Actions ---
+  const addCategory = (name: string) => {
+      if (!categories.includes(name)) {
+          setCategories(prev => [...prev, name]);
+      }
+  };
+
+  const updateCategory = (oldName: string, newName: string) => {
+      if (categories.includes(newName)) {
+          alert("Category name already exists.");
+          return;
+      }
+      setCategories(prev => prev.map(c => c === oldName ? newName : c));
+      // Update linked habits
+      setHabits(prev => prev.map(h => h.category === oldName ? { ...h, category: newName } : h));
+  };
+
+  const deleteCategory = (name: string) => {
+      const isUsed = habits.some(h => h.category === name);
+      if (isUsed) {
+          alert(`Cannot delete '${name}' because it is used by existing disciplines.`);
+          return;
+      }
+      if (categories.length <= 1) {
+          alert("You must have at least one category.");
+          return;
+      }
+      setCategories(prev => prev.filter(c => c !== name));
+  };
+
   // --- Derived State for Header ---
   const daysSinceStart = Math.floor((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
   const progress = Math.min((daysSinceStart / TARGET_DAYS) * 100, 100);
@@ -122,6 +178,19 @@ const App: React.FC = () => {
     <>
       {showIntro && <IntroSequence onComplete={() => setShowIntro(false)} />}
       {showCelebration && <Celebration />}
+      
+      {/* Control Panel Side Sheet */}
+      <ControlPanel 
+        isOpen={isControlPanelOpen} 
+        onClose={() => setIsControlPanelOpen(false)}
+        habits={habits}
+        categories={categories}
+        onDelete={deleteHabit}
+        onToggleArchive={toggleArchiveHabit}
+        onAddCategory={addCategory}
+        onUpdateCategory={updateCategory}
+        onDeleteCategory={deleteCategory}
+      />
       
       <div className={`min-h-screen bg-[#FDFCF5] text-stone-800 flex flex-col md:flex-row overflow-hidden ${!showIntro ? 'animate-fade-in-up' : 'opacity-0'}`}>
         
@@ -196,15 +265,26 @@ const App: React.FC = () => {
                  </p>
              </div>
              
-             {view === 'tracker' && (
-               <button 
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-[#292524] hover:bg-[#44403C] text-[#FDFCF5] px-5 py-2.5 rounded-sm font-display font-medium text-sm tracking-wide flex items-center gap-2 transition-all shadow-md hover:shadow-lg"
+             <div className="flex items-center gap-3">
+               {/* New Settings Button */}
+               <button
+                  onClick={() => setIsControlPanelOpen(true)}
+                  className="p-2.5 text-[#78716c] hover:bg-[#E7E5E4] hover:text-[#292524] rounded-sm transition-all"
+                  title="Control Panel"
                >
-                  <Plus size={16} />
-                  <span className="hidden sm:inline uppercase">Add Habit</span>
+                  <Settings2 size={24} />
                </button>
-             )}
+
+               {view === 'tracker' && (
+                 <button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-[#292524] hover:bg-[#44403C] text-[#FDFCF5] px-5 py-2.5 rounded-sm font-display font-medium text-sm tracking-wide flex items-center gap-2 transition-all shadow-md hover:shadow-lg"
+                 >
+                    <Plus size={16} />
+                    <span className="hidden sm:inline uppercase">Add Habit</span>
+                 </button>
+               )}
+             </div>
           </header>
 
           <div className="p-4 md:p-10 max-w-7xl mx-auto pb-24">
@@ -281,7 +361,11 @@ const App: React.FC = () => {
 
         {/* MODAL */}
         {isModalOpen && (
-          <HabitModal onClose={() => setIsModalOpen(false)} onSave={addHabit} />
+          <HabitModal 
+            onClose={() => setIsModalOpen(false)} 
+            onSave={addHabit}
+            categories={categories} 
+          />
         )}
       </div>
     </>

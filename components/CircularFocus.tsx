@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Habit, HabitLogs } from '../types';
-import { formatDate, CATEGORY_HEX } from '../constants';
+import { formatDate, getCategoryHexColor } from '../constants';
 import { SunburstChart, SunburstNode } from './SunburstChart';
 import { Trophy } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs }) =>
             categoryGroups[habit.category] = {
                 name: habit.category,
                 value: 0,
-                color: CATEGORY_HEX[habit.category],
+                color: getCategoryHexColor(habit.category),
                 children: []
             };
         }
@@ -169,7 +169,7 @@ export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs }) =>
                          {/* Progress */}
                          <circle 
                             cx="150" cy="150" r={radius} 
-                            stroke={selectedHabit ? CATEGORY_HEX[selectedHabit.category] : '#292524'}
+                            stroke={selectedHabit ? getCategoryHexColor(selectedHabit.category) : '#292524'}
                             strokeWidth="20" 
                             fill="transparent" 
                             strokeDasharray={circumference} 
