@@ -7,9 +7,10 @@ import { Trophy } from 'lucide-react';
 interface CircularFocusProps {
   habits: Habit[];
   logs: HabitLogs;
+  categoryColors?: Record<string, string>;
 }
 
-export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs }) => {
+export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs, categoryColors }) => {
   const [selectedHabitId, setSelectedHabitId] = useState<string>(habits[0]?.id || '');
   const [targetDays, setTargetDays] = useState<number>(30);
 
@@ -29,7 +30,7 @@ export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs }) =>
             categoryGroups[habit.category] = {
                 name: habit.category,
                 value: 0,
-                color: getCategoryHexColor(habit.category),
+                color: getCategoryHexColor(habit.category, categoryColors),
                 children: []
             };
         }
@@ -43,7 +44,7 @@ export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs }) =>
 
     root.children = Object.values(categoryGroups).sort((a, b) => b.value - a.value);
     return root;
-  }, [habits, logs]);
+  }, [habits, logs, categoryColors]);
 
 
   // --- Calculate Streak for Selected Habit ---
@@ -169,7 +170,7 @@ export const CircularFocus: React.FC<CircularFocusProps> = ({ habits, logs }) =>
                          {/* Progress */}
                          <circle 
                             cx="150" cy="150" r={radius} 
-                            stroke={selectedHabit ? getCategoryHexColor(selectedHabit.category) : '#292524'}
+                            stroke={selectedHabit ? getCategoryHexColor(selectedHabit.category, categoryColors) : '#292524'}
                             strokeWidth="20" 
                             fill="transparent" 
                             strokeDasharray={circumference} 

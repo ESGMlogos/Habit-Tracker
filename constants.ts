@@ -29,13 +29,54 @@ const DEFAULT_HEX = '#57534E';
 export const CATEGORY_COLORS: Record<string, string> = BASE_COLORS;
 export const CATEGORY_HEX: Record<string, string> = BASE_HEX;
 
+// --- DYNAMIC PALETTE ---
+export interface ColorOption {
+    id: string;
+    hex: string;
+    twClass: string;
+    label: string;
+}
+
+export const PRESET_PALETTE: ColorOption[] = [
+    { id: 'bronze', hex: '#b45309', twClass: 'bg-[#b45309] text-[#FDFCF5]', label: 'Bronze' },
+    { id: 'olive', hex: '#4d7c0f', twClass: 'bg-[#4d7c0f] text-[#FDFCF5]', label: 'Olive' },
+    { id: 'crimson', hex: '#9f1239', twClass: 'bg-[#9f1239] text-[#FDFCF5]', label: 'Crimson' },
+    { id: 'navy', hex: '#0c4a6e', twClass: 'bg-[#0c4a6e] text-[#FDFCF5]', label: 'Navy' },
+    { id: 'royal', hex: '#581c87', twClass: 'bg-[#581c87] text-[#FDFCF5]', label: 'Royal' },
+    { id: 'rust', hex: '#c2410c', twClass: 'bg-[#c2410c] text-[#FDFCF5]', label: 'Rust' },
+    { id: 'teal', hex: '#0f766e', twClass: 'bg-[#0f766e] text-[#FDFCF5]', label: 'Teal' },
+    { id: 'slate', hex: '#475569', twClass: 'bg-[#475569] text-[#FDFCF5]', label: 'Slate' },
+    { id: 'gold', hex: '#ca8a04', twClass: 'bg-[#ca8a04] text-[#FDFCF5]', label: 'Gold' },
+    { id: 'charcoal', hex: '#292524', twClass: 'bg-[#292524] text-[#FDFCF5]', label: 'Charcoal' },
+    { id: 'rose', hex: '#be123c', twClass: 'bg-[#be123c] text-[#FDFCF5]', label: 'Rose' },
+    { id: 'indigo', hex: '#4338ca', twClass: 'bg-[#4338ca] text-[#FDFCF5]', label: 'Indigo' },
+];
+
+export const getRandomPresetColor = (): ColorOption => {
+    return PRESET_PALETTE[Math.floor(Math.random() * PRESET_PALETTE.length)];
+};
+
 // Helper to safely get color class (supports dynamic categories)
-export const getCategoryColorClass = (category: string): string => {
-  return BASE_COLORS[category] || DEFAULT_COLOR_CLASS;
+export const getCategoryColorClass = (category: string, customColors?: Record<string, string>): string => {
+  // 1. Check custom override mapping first (User defined)
+  if (customColors && customColors[category]) {
+      const preset = PRESET_PALETTE.find(p => p.hex === customColors[category]);
+      if (preset) return preset.twClass;
+      // Fallback if it's a raw hex (though we stick to presets mostly)
+      return `bg-[${customColors[category]}] text-[#FDFCF5]`;
+  }
+  // 2. Check Base defaults
+  if (BASE_COLORS[category]) return BASE_COLORS[category];
+  
+  // 3. Fallback
+  return DEFAULT_COLOR_CLASS;
 };
 
 // Helper to safely get hex color (supports dynamic categories)
-export const getCategoryHexColor = (category: string): string => {
+export const getCategoryHexColor = (category: string, customColors?: Record<string, string>): string => {
+  if (customColors && customColors[category]) {
+      return customColors[category];
+  }
   return BASE_HEX[category] || DEFAULT_HEX;
 };
 

@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
-import { X, Trash2, Archive, ArchiveRestore, Plus, Pencil, Check } from 'lucide-react';
-import { Habit } from '../types';
-import { getCategoryColorClass } from '../constants';
+import React, { useState, useRef } from 'react';
+import { X, Trash2, Archive, ArchiveRestore, Plus, Pencil, Check, Download, Upload, FileJson } from 'lucide-react';
+import { Habit, HabitLogs } from '../types';
+import { getCategoryColorClass, PRESET_PALETTE } from '../constants';
 
 interface ControlPanelProps {
   isOpen: boolean;
   onClose: () => void;
   habits: Habit[];
   categories: string[];
+  categoryColors: Record<string, string>;
+  startDate?: string;
   onToggleArchive: (id: string) => void;
   onDelete: (id: string) => void;
   onAddHabit: (habit: Habit) => void;
   onUpdateHabit: (habit: Habit) => void;
   onAddCategory: (name: string) => void;
   onUpdateCategory: (oldName: string, newName: string) => void;
+  onUpdateCategoryColor: (category: string, hex: string) => void;
   onDeleteCategory: (name: string) => void;
+  onImportData: (data: any) => void;
 }
 
 type Tab = 'habits' | 'categories';
@@ -24,20 +28,26 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onClose, 
   habits, 
   categories,
+  categoryColors,
+  startDate,
   onToggleArchive, 
   onDelete,
   onAddHabit,
   onUpdateHabit,
   onAddCategory,
   onUpdateCategory,
-  onDeleteCategory
+  onUpdateCategoryColor,
+  onDeleteCategory,
+  onImportData
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('habits');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Category State
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryValue, setEditCategoryValue] = useState('');
+  const [openColorPicker, setOpenColorPicker] = useState<string | null>(null);
 
   // Habit State
   const [isCreatingHabit, setIsCreatingHabit] = useState(false);
@@ -52,6 +62,61 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     });
     return groups;
   }, [habits, categories]);
+
+  // --- Import / Export Handlers ---
+  const handleExport = () => {
+      const storedLogs = localStorage.getItem('900days_logs');
+      const logsToExport = storedLogs ? JSON.parse(storedLogs) : {};
+
+      const data = {
+          habits,
+          logs: logsToExport,
+          categories,
+          categoryColors,
+          startDate: startDate || new Date().toISOString(),
+          exportedAt: new Date().toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `900days_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => {
+      fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+          try {
+              const jsonStr = event.target?.result as string;
+              const data = JSON.parse(jsonStr);
+              
+              // Simple check for valid structure without blocking alerts
+              if (data.habits || data.categories) {
+                  onImportData(data);
+                  onClose();
+              } else {
+                  console.error("Invalid backup file: Missing habits or categories.");
+              }
+          } catch (err) {
+              console.error("Failed to parse backup file", err);
+          }
+      };
+      reader.readAsText(file);
+      // Reset input so same file can be selected again if needed
+      e.target.value = '';
+  };
 
   // --- Habit Actions ---
   const initCreateHabit = () => {
@@ -120,8 +185,25 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       setEditCategoryValue('');
   };
 
+  const toggleColorPicker = (category: string) => {
+      if (openColorPicker === category) {
+          setOpenColorPicker(null);
+      } else {
+          setOpenColorPicker(category);
+      }
+  };
+
   return (
     <>
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        accept=".json" 
+        className="hidden" 
+      />
+
       {/* Backdrop */}
       <div 
         className={`fixed inset-0 bg-[#292524]/60 backdrop-blur-sm z-[60] transition-opacity duration-500 ${
@@ -143,12 +225,35 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 <h2 className="text-2xl font-display font-bold text-[#292524]">Control Panel</h2>
                 <p className="text-xs font-serif text-[#78716c] uppercase tracking-widest mt-1">Administration</p>
             </div>
-            <button 
-                onClick={onClose}
-                className="p-2 hover:bg-[#E7E5E4] rounded-sm text-[#78716c] transition-colors"
-            >
-                <X size={24} />
-            </button>
+            
+            <div className="flex items-center gap-2">
+                {/* Import/Export Buttons */}
+                <button 
+                    onClick={handleImportClick}
+                    className="p-2 rounded-full hover:bg-[#E7E5E4] text-[#78716c] transition-colors relative group"
+                    title="Import Backup"
+                >
+                    <Upload size={20} />
+                </button>
+                <button 
+                    onClick={handleExport}
+                    className="p-2 rounded-full hover:bg-[#E7E5E4] text-[#78716c] transition-colors"
+                    title="Export Backup"
+                >
+                    <Download size={20} />
+                </button>
+                
+                {/* Separator */}
+                <div className="w-px h-6 bg-[#E7E5E4] mx-1"></div>
+
+                <button 
+                    onClick={onClose}
+                    className="p-2 hover:bg-[#E7E5E4] rounded-sm text-[#78716c] transition-colors"
+                    title="Close"
+                >
+                    <X size={24} />
+                </button>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -247,7 +352,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                     return (
                         <div key={category} className="animate-fade-in">
                             <div className="flex items-center gap-3 mb-4">
-                                <span className={`px-2 py-0.5 text-[9px] uppercase font-display font-bold tracking-widest rounded-sm shadow-sm ${getCategoryColorClass(category)}`}>
+                                <span className={`px-2 py-0.5 text-[9px] uppercase font-display font-bold tracking-widest rounded-sm shadow-sm ${getCategoryColorClass(category, categoryColors)}`}>
                                     {category}
                                 </span>
                                 <div className="h-px bg-[#E7E5E4] flex-1"></div>
@@ -255,7 +360,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
                             <div className="space-y-3">
                                 {categoryHabits.map(habit => {
-                                    // Don't show the row if it's currently being edited
                                     if (habit.id === editingHabitId) return null;
 
                                     return (
@@ -348,55 +452,97 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                         </button>
                     </form>
 
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         {categories.map(cat => (
                              <div 
                                 key={cat}
-                                className="flex items-center justify-between p-3 bg-white border border-[#E7E5E4] rounded-sm group hover:border-[#b45309]/30 transition-colors"
+                                className="p-4 bg-white border border-[#E7E5E4] rounded-sm group hover:border-[#b45309]/30 transition-colors"
                              >
-                                {editingCategory === cat ? (
-                                    <div className="flex items-center gap-2 flex-1">
-                                        <input 
-                                            type="text" 
-                                            value={editCategoryValue}
-                                            onChange={(e) => setEditCategoryValue(e.target.value)}
-                                            className="flex-1 bg-[#F5F5F4] border border-[#b45309] rounded-sm px-2 py-1 text-sm text-[#292524] font-display font-bold outline-none"
-                                            autoFocus
-                                            onKeyDown={(e) => e.key === 'Enter' && saveEditingCategory()}
+                                <div className="flex items-center justify-between mb-3">
+                                    {editingCategory === cat ? (
+                                        <div className="flex items-center gap-2 flex-1">
+                                            <input 
+                                                type="text" 
+                                                value={editCategoryValue}
+                                                onChange={(e) => setEditCategoryValue(e.target.value)}
+                                                className="flex-1 bg-[#F5F5F4] border border-[#b45309] rounded-sm px-2 py-1 text-sm text-[#292524] font-display font-bold outline-none"
+                                                autoFocus
+                                                onKeyDown={(e) => e.key === 'Enter' && saveEditingCategory()}
+                                            />
+                                            <button onClick={saveEditingCategory} className="text-[#15803d] p-1 hover:bg-[#F0FDF4] rounded-sm">
+                                                <Check size={16} />
+                                            </button>
+                                            <button onClick={() => setEditingCategory(null)} className="text-[#ef4444] p-1 hover:bg-[#FEF2F2] rounded-sm">
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-display font-bold text-[#292524] text-sm">{cat}</span>
+                                                <span className="text-[10px] text-[#A8A29E] font-serif bg-[#F5F5F4] px-1.5 py-0.5 rounded-sm">
+                                                    {habits.filter(h => h.category === cat).length} uses
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => startEditingCategory(cat)}
+                                                    className="p-1.5 text-[#78716c] hover:text-[#b45309] hover:bg-[#F5F5F4] rounded-sm transition-colors"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => onDeleteCategory(cat)}
+                                                    className="p-1.5 text-[#78716c] hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                                
+                                {/* Color Palette Dropdown */}
+                                <div className="relative">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-bold uppercase text-[#A8A29E] font-display">Color Code</span>
+                                        <button
+                                            onClick={() => toggleColorPicker(cat)}
+                                            className="w-6 h-6 rounded-full border border-[#D6D3D1] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-[#b45309] focus:ring-offset-1"
+                                            style={{ backgroundColor: categoryColors[cat] || '#57534E' }}
+                                            title="Click to change color"
                                         />
-                                        <button onClick={saveEditingCategory} className="text-[#15803d] p-1 hover:bg-[#F0FDF4] rounded-sm">
-                                            <Check size={16} />
-                                        </button>
-                                        <button onClick={() => setEditingCategory(null)} className="text-[#ef4444] p-1 hover:bg-[#FEF2F2] rounded-sm">
-                                            <X size={16} />
-                                        </button>
                                     </div>
-                                ) : (
-                                    <>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-3 h-3 rounded-full ${getCategoryColorClass(cat).split(' ')[0]}`}></div>
-                                            <span className="font-display font-bold text-[#292524] text-sm">{cat}</span>
-                                            <span className="text-[10px] text-[#A8A29E] font-serif bg-[#F5F5F4] px-1.5 py-0.5 rounded-sm">
-                                                {habits.filter(h => h.category === cat).length} uses
-                                            </span>
+
+                                    {openColorPicker === cat && (
+                                        <div className="absolute top-full left-0 mt-2 p-3 bg-[#FDFCF5] border border-[#E7E5E4] rounded-sm shadow-xl z-20 w-[240px] animate-fade-in-up">
+                                            <div className="flex justify-between items-center mb-2 pb-2 border-b border-[#E7E5E4]">
+                                                 <span className="text-[10px] uppercase font-bold text-[#78716c]">Select Color</span>
+                                                 <button onClick={() => setOpenColorPicker(null)} className="text-[#A8A29E] hover:text-[#292524]">
+                                                     <X size={14} />
+                                                 </button>
+                                            </div>
+                                            <div className="grid grid-cols-6 gap-2">
+                                                {PRESET_PALETTE.map(color => (
+                                                    <button
+                                                        key={color.id}
+                                                        onClick={() => {
+                                                            onUpdateCategoryColor(cat, color.hex);
+                                                            setOpenColorPicker(null);
+                                                        }}
+                                                        title={color.label}
+                                                        className={`
+                                                            w-6 h-6 rounded-full border transition-all hover:scale-110
+                                                            ${categoryColors[cat] === color.hex ? 'border-[#292524] scale-110 shadow-sm' : 'border-transparent'}
+                                                        `}
+                                                        style={{ backgroundColor: color.hex }}
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
-                                        
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                                onClick={() => startEditingCategory(cat)}
-                                                className="p-1.5 text-[#78716c] hover:text-[#b45309] hover:bg-[#F5F5F4] rounded-sm transition-colors"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-                                            <button 
-                                                onClick={() => onDeleteCategory(cat)}
-                                                className="p-1.5 text-[#78716c] hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
+                                    )}
+                                </div>
                              </div>
                         ))}
                     </div>

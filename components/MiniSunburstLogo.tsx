@@ -7,9 +7,10 @@ interface MiniSunburstLogoProps {
   logs: HabitLogs;
   size?: number;
   selectedDate?: string;
+  categoryColors?: Record<string, string>;
 }
 
-export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs, size = 48, selectedDate }) => {
+export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs, size = 48, selectedDate, categoryColors }) => {
   const activeHabits = habits.filter(h => !h.archived);
   
   // Use the passed date, or default to today if not provided
@@ -151,11 +152,11 @@ export const MiniSunburstLogo: React.FC<MiniSunburstLogoProps> = ({ habits, logs
         id: habit.id,
         title: habit.title,
         path,
-        color: isCompleted ? getCategoryHexColor(habit.category) : '#E7E5E4', // Color or Stone-200
+        color: isCompleted ? getCategoryHexColor(habit.category, categoryColors) : '#E7E5E4', // Color or Stone-200
         opacity: isCompleted ? 1 : 0.5
       };
     });
-  }, [activeHabits, logs, targetDate, center, outerRadius, innerRadius]);
+  }, [activeHabits, logs, targetDate, center, outerRadius, innerRadius, categoryColors]);
 
   return (
     <div 

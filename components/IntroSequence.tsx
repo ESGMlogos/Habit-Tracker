@@ -90,7 +90,7 @@ export const IntroSequence: React.FC<IntroSequenceProps> = ({ onComplete }) => {
             Entering
         </p>
         <h1 className={`font-display text-3xl md:text-5xl font-black text-[#292524] tracking-widest transition-all duration-1000 ease-out transform ${textStep >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
-            WARRIOR'S PATH
+            NINDO (忍道)
         </h1>
         <div className={`w-16 h-1 bg-[#b45309] mx-auto mt-6 transition-all duration-1000 delay-300 ${textStep >= 2 ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}></div>
       </div>

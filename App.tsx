@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, LayoutDashboard, Calendar, Target, Settings2 } from 'lucide-react';
 import { Habit, HabitLogs, HabitCategory } from './types';
-import { APP_TITLE, TARGET_DAYS, formatDate, parseDateString } from './constants';
+import { APP_TITLE, TARGET_DAYS, formatDate, parseDateString, CATEGORY_HEX, getRandomPresetColor } from './constants';
 import { HabitCard } from './components/HabitCard';
 import { Stats } from './components/Stats';
 import { HabitModal } from './components/HabitModal';
@@ -16,16 +16,21 @@ const STORAGE_KEYS = {
   HABITS: '900days_habits',
   LOGS: '900days_logs',
   START_DATE: '900days_start',
-  CATEGORIES: '900days_categories'
+  CATEGORIES: '900days_categories',
+  CATEGORY_COLORS: '900days_category_colors' // New key for color persistence
 };
 
 const App: React.FC = () => {
   const [showIntro, setShowIntro] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
+  
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLogs>({});
   const [categories, setCategories] = useState<string[]>(Object.values(HabitCategory));
+  // State for dynamic colors mapping: CategoryName -> HexCode
+  const [categoryColors, setCategoryColors] = useState<Record<string, string>>(CATEGORY_HEX);
+  
   const [view, setView] = useState<'tracker' | 'dashboard' | 'focus'>('tracker');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
@@ -35,17 +40,22 @@ const App: React.FC = () => {
 
   // --- Initialization ---
   useEffect(() => {
-    // Check if we should show intro (only on hard refresh, or every time component mounts)
-    // For this request, we let it run on mount to show the effect.
-    
     const storedHabits = localStorage.getItem(STORAGE_KEYS.HABITS);
     const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
     const storedStart = localStorage.getItem(STORAGE_KEYS.START_DATE);
     const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+    const storedColors = localStorage.getItem(STORAGE_KEYS.CATEGORY_COLORS);
 
     if (storedHabits) setHabits(JSON.parse(storedHabits));
     if (storedLogs) setLogs(JSON.parse(storedLogs));
     if (storedCategories) setCategories(JSON.parse(storedCategories));
+    
+    // Merge stored colors with defaults to ensure basic categories always have color
+    if (storedColors) {
+        setCategoryColors({ ...CATEGORY_HEX, ...JSON.parse(storedColors) });
+    } else {
+        setCategoryColors(CATEGORY_HEX);
+    }
     
     if (storedStart) {
       setStartDate(storedStart);
@@ -69,6 +79,10 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
   }, [categories]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CATEGORY_COLORS, JSON.stringify(categoryColors));
+  }, [categoryColors]);
+
   // --- Actions ---
   const toggleHabit = (habitId: string, date: string) => {
     const isCurrentlyCompleted = logs[habitId]?.includes(date);
@@ -84,19 +98,13 @@ const App: React.FC = () => {
     });
 
     // Check for Victory (Celebration)
-    // We only celebrate if we are turning it ON (isCurrentlyCompleted is false)
     if (!isCurrentlyCompleted) {
         const activeHabits = habits.filter(h => !h.archived);
-        // Identify all other active habits (excluding the one we just clicked)
         const otherHabits = activeHabits.filter(h => h.id !== habitId);
-        
-        // Check if all OTHER habits are ALREADY completed for this date
         const allOthersDone = otherHabits.every(h => logs[h.id]?.includes(date));
         
-        // If all others are done, and we just clicked the last one, triggers victory
         if (allOthersDone && activeHabits.length > 0) {
             setShowCelebration(true);
-            // Hide celebration after 5.5 seconds (matches animation duration: 4.5s delay + 1.2s fade ≈ 5.7s)
             setTimeout(() => setShowCelebration(false), 5500);
         }
     }
@@ -112,7 +120,6 @@ const App: React.FC = () => {
 
   const deleteHabit = (id: string) => {
     setHabits(prev => prev.filter(h => h.id !== id));
-    // Optional: Clean up logs
     setLogs(prev => {
         const newLogs = { ...prev };
         delete newLogs[id];
@@ -130,6 +137,13 @@ const App: React.FC = () => {
   const addCategory = (name: string) => {
       if (!categories.includes(name)) {
           setCategories(prev => [...prev, name]);
+          // Automatically assign a random preset color if it doesn't exist
+          if (!categoryColors[name]) {
+              setCategoryColors(prev => ({
+                  ...prev,
+                  [name]: getRandomPresetColor().hex
+              }));
+          }
       }
   };
 
@@ -139,8 +153,26 @@ const App: React.FC = () => {
           return;
       }
       setCategories(prev => prev.map(c => c === oldName ? newName : c));
+      
+      // Migrate color
+      setCategoryColors(prev => {
+          const color = prev[oldName];
+          const newMap = { ...prev };
+          delete newMap[oldName];
+          // Preserve the old color for the new name
+          newMap[newName] = color; 
+          return newMap;
+      });
+
       // Update linked habits
       setHabits(prev => prev.map(h => h.category === oldName ? { ...h, category: newName } : h));
+  };
+
+  const updateCategoryColor = (categoryName: string, hexColor: string) => {
+      setCategoryColors(prev => ({
+          ...prev,
+          [categoryName]: hexColor
+      }));
   };
 
   const deleteCategory = (name: string) => {
@@ -154,6 +186,31 @@ const App: React.FC = () => {
           return;
       }
       setCategories(prev => prev.filter(c => c !== name));
+      // Cleanup color map
+      setCategoryColors(prev => {
+          const newMap = { ...prev };
+          delete newMap[name];
+          return newMap;
+      });
+  };
+
+  // --- Import / Export ---
+  const handleImportData = (data: any) => {
+      try {
+          if (data.habits && Array.isArray(data.habits)) setHabits(data.habits);
+          if (data.logs && typeof data.logs === 'object') setLogs(data.logs);
+          if (data.categories && Array.isArray(data.categories)) setCategories(data.categories);
+          if (data.categoryColors && typeof data.categoryColors === 'object') {
+              setCategoryColors(prev => ({ ...prev, ...data.categoryColors }));
+          }
+          if (data.startDate) {
+              setStartDate(data.startDate);
+              localStorage.setItem(STORAGE_KEYS.START_DATE, data.startDate);
+          }
+          console.log("Backup successfully restored.");
+      } catch (e) {
+          console.error("Failed to import data", e);
+      }
   };
 
   // --- Derived State for Header ---
@@ -171,14 +228,13 @@ const App: React.FC = () => {
 
   const getPageSubtitle = () => {
       switch(view) {
-          case 'tracker': return selectedDate;
+          case 'tracker': return formatDate(new Date(selectedDate));
           case 'dashboard': return 'Know Thyself';
           case 'focus': return 'The Obstacle Is The Way';
           default: return '';
       }
   };
 
-  // Helper to check if selected date is today
   const isToday = selectedDate === formatDate(new Date());
 
   return (
@@ -192,31 +248,32 @@ const App: React.FC = () => {
         onClose={() => setIsControlPanelOpen(false)}
         habits={habits}
         categories={categories}
+        categoryColors={categoryColors}
+        startDate={startDate}
         onAddHabit={addHabit}
         onUpdateHabit={updateHabit}
         onDelete={deleteHabit}
         onToggleArchive={toggleArchiveHabit}
         onAddCategory={addCategory}
         onUpdateCategory={updateCategory}
+        onUpdateCategoryColor={updateCategoryColor}
         onDeleteCategory={deleteCategory}
+        onImportData={handleImportData}
       />
       
       <div className={`min-h-screen bg-[#FDFCF5] text-stone-800 flex flex-col md:flex-row overflow-hidden ${!showIntro ? 'animate-fade-in-up' : 'opacity-0'}`}>
         
-        {/* Sidebar / Navigation - Designed like a stone column */}
         <nav className="w-full md:w-24 lg:w-72 bg-[#F5F5F0] border-r border-[#E7E5E4] flex flex-col items-center md:items-stretch py-8 shrink-0 z-40 shadow-[inset_-1px_0_10px_rgba(0,0,0,0.02)]">
           <div className="px-6 mb-10 flex flex-col items-center lg:items-start relative group">
-               {/* Desktop Title & Logo Combination */}
               <div className="hidden lg:flex items-center gap-3 border-b-2 border-[#b45309] pb-2 w-full">
-                  <MiniSunburstLogo habits={habits} logs={logs} size={32} selectedDate={selectedDate} />
+                  <MiniSunburstLogo habits={habits} logs={logs} size={32} selectedDate={selectedDate} categoryColors={categoryColors} />
                   <span className="text-3xl font-display font-black tracking-widest text-[#44403C]">
                       {APP_TITLE}
                   </span>
               </div>
               
-              {/* Mobile/Tablet Logo Only (Replaces IX) */}
               <div className="lg:hidden md:hidden">
-                   <MiniSunburstLogo habits={habits} logs={logs} size={48} selectedDate={selectedDate} />
+                   <MiniSunburstLogo habits={habits} logs={logs} size={48} selectedDate={selectedDate} categoryColors={categoryColors} />
               </div>
 
               <span className="hidden lg:block text-xs uppercase tracking-[0.2em] text-[#78716c] mt-1 font-sans">
@@ -262,7 +319,6 @@ const App: React.FC = () => {
           </div>
         </nav>
 
-        {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto h-screen relative scroll-smooth">
           <header className="sticky top-0 bg-[#FDFCF5]/90 backdrop-blur-sm z-30 px-8 py-6 flex justify-between items-center border-b border-[#E7E5E4]">
              <div>
@@ -275,7 +331,6 @@ const App: React.FC = () => {
              </div>
              
              <div className="flex items-center gap-3">
-               {/* New Settings Button */}
                <button
                   onClick={() => setIsControlPanelOpen(true)}
                   className="p-2.5 text-[#78716c] hover:bg-[#E7E5E4] hover:text-[#292524] rounded-sm transition-all"
@@ -301,7 +356,6 @@ const App: React.FC = () => {
               {/* VIEW: TRACKER */}
               {view === 'tracker' && (
                   <div className="space-y-8">
-                      {/* Date Navigation */}
                       <div className="flex items-center gap-6 bg-white p-3 rounded-sm border border-[#E7E5E4] w-fit shadow-sm">
                           <button 
                               onClick={() => {
@@ -348,6 +402,7 @@ const App: React.FC = () => {
                                       logs={logs[habit.id] || []} 
                                       onToggle={toggleHabit}
                                       selectedDate={selectedDate}
+                                      categoryColors={categoryColors}
                                   />
                               ))
                           )}
@@ -357,18 +412,17 @@ const App: React.FC = () => {
 
               {/* VIEW: DASHBOARD */}
               {view === 'dashboard' && (
-                  <Stats habits={habits} logs={logs} />
+                  <Stats habits={habits} logs={logs} categoryColors={categoryColors} />
               )}
 
               {/* VIEW: FOCUS */}
               {view === 'focus' && (
-                  <CircularFocus habits={habits} logs={logs} />
+                  <CircularFocus habits={habits} logs={logs} categoryColors={categoryColors} />
               )}
 
           </div>
         </main>
 
-        {/* MODAL */}
         {isModalOpen && (
           <HabitModal 
             onClose={() => setIsModalOpen(false)} 

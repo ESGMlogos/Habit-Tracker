@@ -13,9 +13,10 @@ import { getLastNDays } from '../constants';
 interface StatsProps {
   habits: Habit[];
   logs: HabitLogs;
+  categoryColors?: Record<string, string>;
 }
 
-export const Stats: React.FC<StatsProps> = ({ habits, logs }) => {
+export const Stats: React.FC<StatsProps> = ({ habits, logs, categoryColors }) => {
   
   // Prepare data for the last 30 days
   const last30Days = getLastNDays(30);

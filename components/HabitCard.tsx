@@ -8,9 +8,10 @@ interface HabitCardProps {
   logs: string[];
   onToggle: (habitId: string, date: string) => void;
   selectedDate: string;
+  categoryColors?: Record<string, string>;
 }
 
-export const HabitCard: React.FC<HabitCardProps> = ({ habit, logs, onToggle, selectedDate }) => {
+export const HabitCard: React.FC<HabitCardProps> = ({ habit, logs, onToggle, selectedDate, categoryColors }) => {
   const isCompleted = logs.includes(selectedDate);
   
   // Calculate Streak
@@ -46,7 +47,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, logs, onToggle, sel
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
-            <span className={`px-2 py-0.5 text-[9px] uppercase font-display font-bold tracking-widest rounded-sm shadow-sm ${getCategoryColorClass(habit.category)}`}>
+            <span className={`px-2 py-0.5 text-[9px] uppercase font-display font-bold tracking-widest rounded-sm shadow-sm ${getCategoryColorClass(habit.category, categoryColors)}`}>
               {habit.category}
             </span>
             {streak > 2 && (
